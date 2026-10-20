@@ -1,0 +1,454 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Scroll-Triggered Content Slider</title>
+
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            font-family: Arial, sans-serif;
+            color: #222;
+        }
+
+        /* Temporary testing content */
+        .test-content {
+            min-height: 200vh;
+            padding: 40px;
+            background: linear-gradient(#f5f5f5, #e5e5e5);
+        }
+
+        /* Main popup */
+        #annual-report-popup {
+            position: fixed;
+            right: 25px;
+            bottom: 25px;
+            z-index: 99999;
+
+            width: 440px;
+            max-width: calc(100vw - 30px);
+
+            background: #242424;
+            color: #fff;
+            box-shadow: 0 5px 25px rgba(0, 0, 0, 0.25);
+
+            opacity: 0;
+            visibility: hidden;
+            pointer-events: none;
+            transform: translateY(30px);
+
+            transition:
+                opacity 0.35s ease,
+                transform 0.35s ease,
+                visibility 0.35s ease;
+        }
+
+        #annual-report-popup.is-visible {
+            opacity: 1;
+            visibility: visible;
+            pointer-events: auto;
+            transform: translateY(0);
+        }
+
+        /* Close button */
+        .report-popup-close {
+            position: absolute;
+            top: 8px;
+            right: 8px;
+            z-index: 10;
+
+            width: 30px;
+            height: 30px;
+            padding: 0;
+
+            border: none;
+            border-radius: 50%;
+            background: rgba(0, 0, 0, 0.6);
+            color: #fff;
+
+            font-size: 24px;
+            line-height: 1;
+            cursor: pointer;
+        }
+
+        /* Slider viewport */
+        .popup-slider {
+            position: relative;
+            overflow: hidden;
+        }
+
+        .popup-slides {
+            display: flex;
+            width: 100%;
+            transition: transform 0.4s ease;
+        }
+
+        /* Individual slide */
+        .popup-slide {
+            display: flex;
+            flex: 0 0 100%;
+            width: 100%;
+            min-width: 0;
+            align-items: stretch;
+        }
+
+        /* Slide image */
+        .popup-slide-image {
+            width: 36%;
+            flex-shrink: 0;
+            overflow: hidden;
+        }
+
+        .popup-slide-image img {
+            display: block;
+            width: 100%;
+            height: 100%;
+            min-height: 190px;
+            object-fit: cover;
+        }
+
+        /* Slide content */
+        .popup-slide-content {
+            display: flex;
+            flex: 1;
+            min-width: 0;
+            flex-direction: column;
+            justify-content: center;
+            align-items: flex-start;
+            padding: 25px 22px;
+        }
+
+        .popup-slide-content h3 {
+            margin: 0 0 10px;
+            color: #fff;
+            font-size: 17px;
+            font-weight: 700;
+            line-height: 1.35;
+        }
+
+        .popup-slide-content p {
+            margin: 0 0 14px;
+            color: #eee;
+            font-size: 13px;
+            line-height: 1.5;
+        }
+
+        .popup-slide-content a {
+            display: inline-block;
+            color: #fff;
+            font-size: 13px;
+            font-weight: 600;
+            text-decoration: underline;
+        }
+
+        .popup-slide-content a:hover {
+            text-decoration: none;
+        }
+
+        /* Slider controls */
+        .popup-slider-controls {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+            padding: 10px 15px;
+            background: #191919;
+        }
+
+        .popup-arrow {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+
+            width: 30px;
+            height: 30px;
+            flex-shrink: 0;
+
+            border: 1px solid #666;
+            border-radius: 50%;
+            background: transparent;
+            color: #fff;
+
+            font-size: 19px;
+            cursor: pointer;
+        }
+
+        .popup-arrow:hover {
+            background: #444;
+        }
+
+        .popup-dots {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+
+        .popup-dot {
+            width: 8px;
+            height: 8px;
+            padding: 0;
+
+            border: none;
+            border-radius: 50%;
+            background: #777;
+            cursor: pointer;
+        }
+
+        .popup-dot.active {
+            width: 20px;
+            border-radius: 10px;
+            background: #fff;
+        }
+
+        .popup-slide-count {
+            color: #ccc;
+            font-size: 12px;
+            white-space: nowrap;
+        }
+
+        /* Mobile */
+        @media screen and (max-width: 480px) {
+            #annual-report-popup {
+                right: 10px;
+                bottom: 10px;
+                width: calc(100vw - 20px);
+            }
+
+            .popup-slide-image {
+                width: 34%;
+            }
+
+            .popup-slide-image img {
+                min-height: 185px;
+            }
+
+            .popup-slide-content {
+                padding: 22px 13px 18px;
+            }
+
+            .popup-slide-content h3 {
+                font-size: 14px;
+                margin-bottom: 8px;
+            }
+
+            .popup-slide-content p {
+                font-size: 12px;
+                line-height: 1.4;
+                margin-bottom: 10px;
+            }
+
+            .popup-slide-content a {
+                font-size: 12px;
+            }
+
+            .popup-slider-controls {
+                padding: 8px 12px;
+            }
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+
+            #annual-report-popup,
+            .popup-slides {
+                transition: none;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+    <!-- Temporary test page content -->
+    <main class="test-content">
+        <h1>Content Slider Popup Test</h1>
+        <p>Scroll down to reveal the popup.</p>
+    </main>
+
+    <!-- Scroll-triggered popup -->
+    <div id="annual-report-popup" role="region" aria-label="Featured articles" aria-roledescription="carousel">
+
+        <button type="button" class="report-popup-close" aria-label="Close popup">&times;</button>
+
+        <div class="popup-slider">
+
+            <div class="popup-slides">
+
+                <!-- SLIDE 1 -->
+                <article class="popup-slide">
+                    <div class="popup-slide-image">
+                        <img src="https://cdn.prod.website-files.com/60878a28ce244d2b00b83639/6acf5040634ab631ca7c2aa1_ev-fleet-roi.jpg"
+                            alt="Electric vehicle fleet">
+                    </div>
+
+                    <div class="popup-slide-content">
+                        <h3>Dashcam For Your Fleet</h3>
+
+                        <p>
+                            Discover how smarter fleet planning can help
+                            reduce operating costs and improve efficiency.
+                        </p>
+
+                        <a href="#" target="_blank" rel="noopener noreferrer">
+                            Request a Demo
+                        </a>
+                    </div>
+                </article>
+
+                <!-- SLIDE 2 -->
+                <article class="popup-slide">
+                    <div class="popup-slide-image">
+                        <img src="https://cdn.prod.website-files.com/60878a28ce244d2b00b83639/6ac8b7279d234e4296d2d390_agentic-ai-fleet-management-hype-reality.jpg.png"
+                            alt="AI-powered fleet management">
+                    </div>
+
+                    <div class="popup-slide-content">
+                        <h3>AI Cameras</h3>
+
+                        <p>
+                            Explore how emerging AI technology can help
+                            businesses make better fleet decisions.
+                        </p>
+                        <a href="#" target="_blank" rel="noopener noreferrer">
+                            Request a demo
+                        </a>
+                    </div>
+                </article>
+
+                <!-- SLIDE 3 -->
+                <article class="popup-slide">
+                    <div class="popup-slide-image">
+                        <img src="https://cdn.prod.website-files.com/60878a28ce244d2b00b83639/6ac62aebb017dc1d037e020e_What%20is%20fleet%20asset%20management-p-1080.png"
+                            alt="Fleet asset management">
+                    </div>
+
+                    <div class="popup-slide-content">
+                        <h3>Get More From Your Fleet Assets</h3>
+
+                        <p>
+                            Learn how effective asset management can
+                            improve visibility, productivity and control.
+                        </p>
+
+                        <a href="#" target="_blank" rel="noopener noreferrer">
+                            Request a demo
+                        </a>
+                    </div>
+                </article>
+
+            </div>
+        </div>
+
+        <!-- Slider navigation -->
+        <div class="popup-slider-controls">
+
+            <button type="button" class="popup-arrow popup-prev" aria-label="Previous slide">&lsaquo;</button>
+
+            <div class="popup-dots" aria-label="Choose a slide">
+                <button type="button" class="popup-dot active" aria-label="Go to slide 1" aria-current="true"></button>
+
+                <button type="button" class="popup-dot" aria-label="Go to slide 2"></button>
+
+                <button type="button" class="popup-dot" aria-label="Go to slide 3"></button>
+            </div>
+
+            <span class="popup-slide-count" aria-live="polite">1 / 3</span>
+
+            <button type="button" class="popup-arrow popup-next" aria-label="Next slide">&rsaquo;</button>
+
+        </div>
+    </div>
+
+    <script>
+        (function () {
+            const popup = document.getElementById('annual-report-popup');
+
+            if (!popup || popup.dataset.initialized === 'true') {
+                return;
+            }
+
+            popup.dataset.initialized = 'true';
+
+            const closeButton = popup.querySelector('.report-popup-close');
+            const slidesTrack = popup.querySelector('.popup-slides');
+            const slides = Array.from(popup.querySelectorAll('.popup-slide'));
+            const prevButton = popup.querySelector('.popup-prev');
+            const nextButton = popup.querySelector('.popup-next');
+            const dots = Array.from(popup.querySelectorAll('.popup-dot'));
+            const slideCount = popup.querySelector('.popup-slide-count');
+
+            const scrollThreshold = 300;
+
+            let currentSlide = 0;
+            let dismissed = false;
+
+            function showSlide(index) {
+                currentSlide = (index + slides.length) % slides.length;
+
+                slidesTrack.style.transform =
+                    'translateX(-' + (currentSlide * 100) + '%)';
+
+                dots.forEach(function (dot, i) {
+                    const isActive = i === currentSlide;
+
+                    dot.classList.toggle('active', isActive);
+
+                    if (isActive) {
+                        dot.setAttribute('aria-current', 'true');
+                    } else {
+                        dot.removeAttribute('aria-current');
+                    }
+                });
+
+                slideCount.textContent =
+                    (currentSlide + 1) + ' / ' + slides.length;
+            }
+
+            function handleScroll() {
+                if (dismissed) {
+                    return;
+                }
+
+                popup.classList.toggle(
+                    'is-visible',
+                    window.scrollY >= scrollThreshold
+                );
+            }
+
+            prevButton.addEventListener('click', function () {
+                showSlide(currentSlide - 1);
+            });
+
+            nextButton.addEventListener('click', function () {
+                showSlide(currentSlide + 1);
+            });
+
+            dots.forEach(function (dot, index) {
+                dot.addEventListener('click', function () {
+                    showSlide(index);
+                });
+            });
+
+            closeButton.addEventListener('click', function () {
+                dismissed = true;
+                popup.classList.remove('is-visible');
+            });
+
+            window.addEventListener('scroll', handleScroll, {
+                passive: true
+            });
+
+            showSlide(0);
+            handleScroll();
+        })();
+    </script>
+
+</body>
+
+</html>
